@@ -1,6 +1,8 @@
 // to import the express using the import module add module to the package.json
 import express from "express";
 import { MongoClient } from "mongodb";
+import dotenv from 'dotenv' ;
+dotenv.config();
 
 // calling the express function to use the methods in it
 const app = express();
@@ -22,8 +24,8 @@ app.use(express.json()) //inbuilt middleware
 //   },
 // ];
 
-const MONGO_URL = process.env.MONGO_URI;
-// hvHqysPyr0j62CDG
+const MONGO_URL = "mongodb://localhost";
+
 app.use(express.json());
 async function createconnection(){
 const client = new MongoClient(MONGO_URL);
@@ -69,6 +71,7 @@ app.post("/input",async function (res,req){
 
 
 const port = process.env.PORT;
+
 app.listen(port, () => {
   console.log(`app started in ${port}`);
 });
