@@ -1,77 +1,67 @@
-// to import the express using the import module add module to the package.json
 import express from "express";
+import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
-import dotenv from 'dotenv' ;
 dotenv.config();
 
-// calling the express function to use the methods in it
 const app = express();
-app.use(express.json()) //inbuilt middleware
-
-// the data is not json still node js will do the work for us
-// const data = [
-//   {
-//     id: 1,
-//     name: "gana",
-//   },
-//   {
-//     id: 2,
-//     name: "ishu",
-//   },
-//   {
-//     id: 3,
-//     name: "anjali",
-//   },
-// ];
-
-const MONGO_URL = "mongodb://localhost";
-
 app.use(express.json());
-async function createconnection(){
-const client = new MongoClient(MONGO_URL);
-await client.connect();
-console.log("mongodb connected");
-return client;
-}
-
-const client = await createconnection();
 
 app.get("/", function (req, res) {
-  res.send("hello world");
+  res.send("Hello World");
 });
 
-// app.get("/data", function (req, res) {
-  
-//   res.send(data);
-// });
+// const MONGO_URL = "mongodb://localhost:27017";
+const MONGO_URL = process.env.MONGO_URL;
 
-app.get("/data/:id",async function (req, res) {
+async function createConnection() {
+  const client = new MongoClient(MONGO_URL);
+  await client.connect();
+  console.log("I got the Database, Boss.");
+  return client;
+}
+
+const client = await createConnection();
+
+app.post("/names", async function (req, res) {
+  const data = req.body;
+  console.log(data);
+  const result = await client.db("crud").collection("data").insertMany(data);
+  res.send(result);
+});
+
+app.get("/names/:id", async function (req, res) {
   console.log(req.params);
   const { id } = req.params;
-  // this below line displays the data in an array
-  // const single_data = data.filter((sd)=>sd.id==id)
-  // this below line with the first index looks hacky
-  // const single_data = data.filter((sd)=>sd.id==id)[0]
-  // so we use another method similar to filter which is find, find only return an element whereas
-  //  filter returns an array
-  // const single_data = data.find((sd) => sd.id == id);
-  const single_data = await client.db("crud").collection("data").findOne({id:id});
-  single_data ?  res.send(single_data) : res.status(404).send({msg:"data not found"});
+  const result = await client.db("crud").collection("data").findOne({ id: id });
+  result ? res.send(result) : res.status(404).send("match not found");
 });
 
+app.get("/names", async function (req, res) {
+  console.log(req.query);
+  const result = await client
+    .db("crud")
+    .collection("data")
+    .find(req.query)
+    .toArray();
+  res.send(result);
+});
 
-// this alone can't take the data in, node need the info og how the data is sent
-// so middleware mention json is necessary
-app.post("/input",async function (res,req){
- const input = req.body
- const input_data = await client.db("crud").collection("data").insertMany(input);
-  res.send(input_data);
-})
+app.delete("/names/:id", async function (req, res) {
+  console.log(req.params);
+  const { id } = req.params;
+  const result = await client.db("crud").collection("data").deleteOne({ id: id });
+  result.deletedCount >0 ? res.send(result) : res.status(404).send("match not found");
+});
 
+app.put("/names/:id", async function (req, res) {
+  console.log(req.params);
+  const { id } = req.params;
+  const input = req.body;
+  const result = await client.db("crud").collection("data").updateOne({id:id},{$set:input});
+  result ? res.send(result) : res.status(404).send("match not found");
+});
 
-
-const port = process.env.PORT;
-
-app.listen(port, () => {
-  console.log(`app started in ${port}`);
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`app started in ${PORT}`);
 });
